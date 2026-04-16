@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoHogar - UNAD</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --enel-green: #46be4b; --dark-green: #1b5e20; --danger: #d32f2f; --bg: #f4f7f5; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: #333; }
+        nav { background: var(--enel-green); padding: 12px; display: flex; justify-content: center; gap: 15px; position: sticky; top: 0; z-index: 1000; }
+        nav button { background: none; border: none; color: white; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; cursor: pointer; padding: 5px 10px; }
+        nav button.active { border-bottom: 2px solid white; }
+        header { background: white; padding: 25px; text-align: center; border-bottom: 1px solid #ddd; }
+        header h1 { color: var(--enel-green); margin: 0; }
+        section { max-width: 1000px; margin: 20px auto; padding: 20px; animation: fadeIn 0.4s ease; }
+        .hidden { display: none !important; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        select[multiple] { height: 150px; }
+        .btn-main { background: var(--enel-green); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        .device-chip { display: flex; justify-content: space-between; background: #f1f8f1; padding: 8px 12px; border-radius: 6px; margin-bottom: 5px; border-left: 3px solid var(--enel-green); }
+        .btn-del { background: #ffcdd2; color: #b71c1c; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+        .proyeccion-box { background: var(--dark-green); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center; }
+        .instruccion { font-size: 0.85rem; color: #666; margin-bottom: 5px; font-style: italic; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<nav id="mainNav" class="hidden">
+    <button onclick="changeTab('appTab')" id="btn-appTab">Dashboard</button>
+    <button onclick="changeTab('historialTab')" id="btn-historialTab">Historial</button>
+    <button onclick="changeTab('perfilTab')" id="btn-perfilTab">Perfil</button>
+    <button onclick="changeTab('nosotrosTab')" id="btn-nosotrosTab">Nosotros</button>
+    <button onclick="logout()" style="color: #ffcdd2;">Salir</button>
+</nav>
+
+<header><h1>EcoHogar</h1></header>
+
+<section id="authSection">
+    <div class="card" id="loginBox" style="max-width: 400px; margin: auto;">
+        <h2 style="text-align:center">Ingresar</h2>
+        <input type="email" id="emailIn" placeholder="Correo">
+        <input type="password" id="passIn" placeholder="Contraseña">
+        <button class="btn-main" onclick="handleLogin()">ENTRAR</button>
+        <p align="center">¿No tienes cuenta? <a href="#" onclick="toggleAuth(true)">Regístrate</a></p>
+    </div>
+    <div class="card hidden" id="regBox" style="max-width: 400px; margin: auto;">
+        <h2 style="text-align:center">Registro</h2>
+        <input type="text" id="nameReg" placeholder="Nombre">
+        <input type="email" id="emailReg" placeholder="Correo">
+        <input type="password" id="passReg" placeholder="Contraseña">
+        <button class="btn-main" onclick="handleRegister()">CREAR CUENTA</button>
+        <p align="center"><a href="#" onclick="toggleAuth(false)">Volver</a></p>
+    </div>
+</section>
+
+<section id="appTab" class="hidden">
+    <div id="statusMsg"></div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="card">
+            <h3>Nuevo Consumo</h3>
+            <input type="number" id="valConsumo" placeholder="Valor COP">
+            <button class="btn-main" onclick="addConsumo()">REGISTRAR</button>
+        </div>
+        <div class="card">
+            <h3>Mis Aparatos</h3>
+            <p class="instruccion">selecciona tus aparatos electrónicos y haz clic en añadir para poder registrarlos</p>
+            <select id="selAparato" multiple>
+                <option value="Nevera">Nevera</option>
+                <option value="Aire">Aire Acondicionado</option>
+                <option value="Lavadora">Lavadora</option>
+                <option value="Iluminacion">Iluminación LED</option>
+                <option value="Televisor">Televisor</option>
+                <option value="Microondas">Microondas</option>
+                <option value="Ducha">Ducha Eléctrica</option>
+                <option value="Computadora">Computadora</option>
+                <option value="Secadora">Secadora</option>
+                <option value="Consola">Consola Videojuegos</option>
+            </select>
+            <button class="btn-main" onclick="addAparato()">AÑADIR SELECCIONADOS</button>
+            <div id="listaAparatos" style="margin-top:10px"></div>
+        </div>
+    </div>
+    <div id="proyeccionZona"></div>
+    <div class="card"><h3>Tendencia</h3><canvas id="chartConsumo" height="100"></canvas></div>
+    <div id="recsIA"></div>
+
+    <div class="card" style="border-top: 4px solid var(--enel-green);">
+        <h2>Visión Institucional y Tecnológica</h2>
+        <p>Para el año 2026, <strong>EcoHogar</strong> se proyecta como el ecosistema digital líder en Colombia para la optimización del consumo energético residencial, integrando el análisis de datos masivos con la educación ciudadana. Nuestra visión trasciende el simple monitoreo; buscamos empoderar a cada hogar colombiano con herramientas de software que conviertan el ahorro en una práctica cotidiana y cuantificable.</p>
+        <p>Aspiramos a ser un referente académico en la UNAD, demostrando cómo la arquitectura de sistemas puede mitigar el impacto económico de las tarifas eléctricas y contribuir directamente a la reducción de la huella de carbono individual, alineándonos con los objetivos globales de sostenibilidad y eficiencia tecnológica.</p>
+    </div>
+</section>
+
+<section id="historialTab" class="hidden">
+    <div class="card">
+        <h2>Historial de Consumo</h2>
+        <table>
+            <thead><tr><th>Mes</th><th>Valor</th><th>Diferencia</th><th>Estado</th></tr></thead>
+            <tbody id="tablaCuerpo"></tbody>
+        </table>
+    </div>
+</section>
+
+<section id="perfilTab" class="hidden">
+    <div class="card">
+        <h2>Mi Perfil</h2>
+        <p><strong>Nombre:</strong> <span id="pName"></span></p>
+        <p><strong>Correo:</strong> <span id="pEmail"></span></p>
+        <hr>
+        <h3>Actualizar Datos</h3>
+        <input type="text" id="updName" placeholder="Nuevo nombre">
+        <input type="password" id="updPass" placeholder="Nueva contraseña">
+        <button class="btn-main" onclick="updateUser()">GUARDAR CAMBIOS</button>
+    </div>
+</section>
+
+<section id="nosotrosTab" class="hidden">
+    <div class="card">
+        <h2>Sobre los Desarrolladores</h2>
+        <p>Somos un equipo multidisciplinario de estudiantes de la <strong>Universidad Nacional Abierta y a Distancia (UNAD)</strong>. El equipo de EcoHogar está compuesto por:</p>
+        <ul>
+            <li><strong>Carlos Eduardo Peña Garcés:</strong> Liderazgo técnico y diseño de lógica de sistemas.</li>
+            <li><strong>Maria Camila Arias Quintanilla:</strong> Investigación y análisis de datos de consumo.</li>
+            <li><strong>David Fernando Monroy Gutiérrez:</strong> Arquitectura de información y diseño de experiencia de usuario.</li>
+            <li><strong>Karen Lorena Álvarez González:</strong> Gestión de sostenibilidad y validación de impacto social.</li>
+            <li><strong>Johan Orlando Sánchez Tarazona:</strong> Aseguramiento de la calidad y optimización de algoritmos.</li>
+        </ul>
+    </div>
+</section>
+
+<script>
+const videoDB = {
+    "Nevera": { 
+        tips: ["Regula el termostato a 4°C.", "Evita la escarcha.", "Limpia la rejilla trasera.", "Verifica las gomas."], 
+        vids: ["RfqRNvoFNEc", "8vxw6lA0XiI", "JsdqIv_bwj4", "0NH2vHOEEoI", "smLW5kSFivQ", "iViLgIAhmRM", "bG5T-jEHkLg", "mkxyIGkeVlU", "bP0yrSLAlk4", "J2tGpWsDOos"] 
+    },
+    "Aire": { 
+        tips: ["Modo Eco activo.", "Mantén 24°C.", "Limpia filtros quincenal.", "Aísla ventanas."], 
+        vids: ["dBCTvgPfjiE", "lZEHVW7GETM", "ysO-nhLVNHg", "_VCmvS2WoIk", "tP3XmqUJQA8", "humMpaH1x6k", "zm-dwfRGei0", "zxE_VEuinzg", "7qQhmkEG058", "VkjMBbk151I"] 
+    },
+    "Lavadora": { 
+        tips: ["Cargas completas.", "Usa agua fría.", "Centrifugado máximo.", "Ciclos Eco."], 
+        vids: ["c3XbtpCuJXI", "TAoObN7O6A4", "wOHXnsmufwI", "XeUylT8UhRI", "bUgKhsVbekY", "zV052hcNMI0", "ChM9DQ-3eYI", "5_Zb4Sg4Ii8", "GJmmeVey6Lw", "NLEmLmeJKPY"] 
+    },
+    "Iluminacion": { 
+        tips: ["Cambia a LED.", "Usa sensores de movimiento.", "Limpia las lámparas.", "Aprovecha luz natural."], 
+        vids: ["sWoBslcIaPc", "IcrlKyWAgXU", "4DOenDA8oY8", "43KyB2uUvXQ", "2x5JyZpdvRs", "Fx5kvi3ljhQ", "54OjjUUFN2o", "gCScTGZ2v-g", "7JfUGbycbDw", "rd2OTT_LEd4"] 
+    },
+    "Televisor": { 
+        tips: ["Baja luz de fondo.", "Apagado automático.", "Desconecta standby.", "Brillo adaptativo."], 
+        vids: ["K_DN6VRxNqQ", "GtuILiLaIWE", "QwqjxOOw13U", "wDURTr0z7ws", "fRkas2QDsrg", "eBTLnj0E8U8", "QuJHBwXfC0g", "_CAFgxdOqho", "f7gOleu0RVc", "dWTCyfF2eb4"] 
+    },
+    "Microondas": { 
+        tips: ["Limpia grasa interna.", "Tapa platos.", "Usa potencias medias.", "Desconecta standby."], 
+        vids: ["zXpoYKClYco", "MBhkDJSsyjk", "X-xnCn9vIzY", "H1huSNRxjho", "at-jbpS-skg", "8rtpm599944", "UJp4XRrFs7U", "iah9_gS99Kg", "VUVfQr47kS8", "xCEzhWmvoV8"] 
+    },
+    "Ducha": { 
+        tips: ["Duchas de 5 min.", "Cabezal bajo flujo.", "Limpia resistencia.", "No mezcles agua."], 
+        vids: ["W3bQteIJGiE", "AhIUeAwPzqg", "6kBZlwRTSgA", "Ylg73C3Yth4", "ExspAdQ7fIw", "aBn4GQpfYXs", "jienoGxZUIQ", "vFn21IHuIfA", "M-Ko-IRG6a8", "uNILHRa3eGM"] 
+    },
+    "Computadora": { 
+        tips: ["Modo ahorro.", "Limpia ventiladores.", "Brillo moderado.", "Suspende si no usas."], 
+        vids: ["e86QttRDZPw", "6mH85Lncf3g", "23z2tvO-AAE", "wHoSYM7ablQ", "BAlxTPPtU2o", "cCn5NYeP41c", "r-mK2Gd1icw", "3qW7tz3IJHw", "6dFBUE7IXjY", "wVFDmNpok1g"] 
+    },
+    "Secadora": { 
+        tips: ["Limpia filtro pelusa.", "Centrifuga bien.", "Cargas seguidas.", "No sobrecargues."], 
+        vids: ["XAIY8Z7Yh1U", "tmS7wzmBgPQ", "LyK3F7PLzAg", "pT0Z6NffUx8", "3OLiPtPpEZ8", "1rZi03izzCs", "c0xSlioUAiQ", "d2VIlygBrwA", "j_-spoIedIc", "fK1bM_YZEvs"] 
+    },
+    "Consola": { 
+        tips: ["Apagado tras 1h.", "No modo reposo.", "Limpia polvo.", "Desconecta mandos."], 
+        vids: ["fftMZ9BfN3E", "7LScAEmfd4I", "fdEpl4pMERE", "hwLQVvIQ5Uk", "oWYkyY0Ot0U", "pqtHPviz6fk", "IvX4akPH52I", "ySS8H9q7rDc", "DSrKy-0JjRM", "fftMZ9BfN3E"] 
+    }
+};
+
+let users = JSON.parse(localStorage.getItem('ecoUsers')) || [];
+let currentUser = null;
+let myChart = null;
+
+function handleRegister() {
+    if(users.find(u => u.email === emailReg.value)) return alert("Email ya existe");
+    users.push({ name: nameReg.value, email: emailReg.value, pass: passReg.value, consumos: [], aparatos: [] });
+    localStorage.setItem('ecoUsers', JSON.stringify(users));
+    alert("¡Registrado!"); toggleAuth(false);
+}
+
+function handleLogin() {
+    let user = users.find(u => u.email === emailIn.value && u.pass === passIn.value);
+    if(!user) return alert("Credenciales incorrectas");
+    currentUser = user;
+    authSection.classList.add('hidden');
+    mainNav.classList.remove('hidden');
+    changeTab('appTab');
+    renderAll();
+}
+
+function renderAll() {
+    renderAparatos();
+    renderRecs();
+    renderChart();
+    renderStatusYProyeccion();
+    document.getElementById('pName').innerText = currentUser.name;
+    document.getElementById('pEmail').innerText = currentUser.email;
+}
+
+function renderStatusYProyeccion() {
+    const status = document.getElementById('statusMsg');
+    const proj = document.getElementById('proyeccionZona');
+    status.innerHTML = ""; proj.innerHTML = "";
+    if(currentUser.consumos.length > 0) {
+        let ultimo = currentUser.consumos[currentUser.consumos.length-1];
+        proj.innerHTML = `<div class="proyeccion-box"><p>POTENCIAL DE AHORRO CALCULADO</p><h2>$${(ultimo*0.18).toLocaleString()} COP</h2></div>`;
+        if(currentUser.consumos.length >= 2) {
+            let anterior = currentUser.consumos[currentUser.consumos.length-2];
+            if(ultimo > anterior) status.innerHTML = `<div class="alert" style="background:#ffebee;color:#b71c1c">⚠️ Alerta: El consumo aumentó en $${(ultimo-anterior).toLocaleString()}.</div>`;
+            else status.innerHTML = `<div class="alert" style="background:#e8f5e9;color:#2e7d32">✅ Progreso: Lograste reducir $${(anterior-ultimo).toLocaleString()}.</div>`;
+        }
+    }
+}
+
+function renderHistorial() {
+    const cuerpo = document.getElementById('tablaCuerpo');
+    cuerpo.innerHTML = "";
+    currentUser.consumos.forEach((val, i) => {
+        let dif = i === 0 ? "---" : (val - currentUser.consumos[i-1]).toLocaleString();
+        let estado = i === 0 ? "Base" : (val > currentUser.consumos[i-1] ? "Subió 📈" : "Bajó 📉");
+        cuerpo.innerHTML += `<tr><td>Mes ${i+1}</td><td>$${val.toLocaleString()}</td><td>${dif}</td><td>${estado}</td></tr>`;
+    });
+}
+
+function renderAparatos() {
+    const lista = document.getElementById('listaAparatos');
+    lista.innerHTML = "";
+    currentUser.aparatos.forEach((ap, i) => {
+        lista.innerHTML += `<div class="device-chip"><span>${ap}</span><button class="btn-del" onclick="removeAp(${i})">X</button></div>`;
+    });
+}
+
+function renderRecs() {
+    const area = document.getElementById('recsIA');
+    area.innerHTML = "<h3>Guías de Ahorro Multimedia</h3>";
+    currentUser.aparatos.forEach(ap => {
+        const d = videoDB[ap];
+        if(!d) return;
+        const randomVids = [...d.vids].sort(() => 0.5 - Math.random()).slice(0, 3);
+        let htmlTips = d.tips.map(t => `<li>${t}</li>`).join("");
+        let htmlVids = randomVids.map((vid, i) => `<a href="https://www.youtube.com/watch?v=${vid}" target="_blank" style="margin-right:15px; color:var(--enel-green); font-weight:bold; font-size:0.85rem;">▶ Ver Video ${i+1}</a>`).join("");
+        area.innerHTML += `<div class="card"><h4>${ap}</h4><ul>${htmlTips}</ul><div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${htmlVids}</div></div>`;
+    });
+}
+
+function renderChart() {
+    const ctx = document.getElementById('chartConsumo').getContext('2d');
+    if(myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: currentUser.consumos.map((_, i) => "Mes "+(i+1)),
+            datasets: [{ label: 'COP', data: currentUser.consumos, borderColor: '#46be4b', fill: true, tension: 0.3 }]
+        }
+    });
+}
+
+function addConsumo() {
+    let v = document.getElementById('valConsumo').value;
+    if(v) { currentUser.consumos.push(parseFloat(v)); save(); renderAll(); document.getElementById('valConsumo').value=""; }
+}
+
+function addAparato() {
+    const select = document.getElementById('selAparato');
+    const selectedOptions = Array.from(select.selectedOptions).map(option => option.value);
+    
+    selectedOptions.forEach(a => {
+        if(!currentUser.aparatos.includes(a)) {
+            currentUser.aparatos.push(a);
+        }
+    });
+    
+    save(); 
+    renderAll();
+    select.selectedIndex = -1; // Deseleccionar después de añadir
+}
+
+function removeAp(i) { currentUser.aparatos.splice(i,1); save(); renderAll(); }
+
+function updateUser() {
+    if(updName.value) currentUser.name = updName.value;
+    if(updPass.value) currentUser.pass = updPass.value;
+    save(); alert("Perfil actualizado."); renderAll();
+}
+
+function save() {
+    let idx = users.findIndex(u => u.email === currentUser.email);
+    users[idx] = currentUser;
+    localStorage.setItem('ecoUsers', JSON.stringify(users));
+}
+
+function changeTab(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById('btn-'+id).classList.add('active');
+    if(id === 'historialTab') renderHistorial();
+}
+
+function toggleAuth(reg) { loginBox.classList.toggle('hidden', reg); regBox.classList.toggle('hidden', !reg); }
+function logout() { location.reload(); }
+</script>
+</body>
+</html>
