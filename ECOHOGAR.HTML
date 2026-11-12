@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoHogar - UNAD</title>
+    <!-- Chart.js para tableros interactivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #46be4b;
+            --primary-dark: #1b5e20;
+            --primary-light: #e8f5e9;
+            --danger: #d32f2f;
+            --warning: #f57c00;
+            --info: #0288d1;
+            --bg: #f4f7f5;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); }
+        
+        nav { 
+            background: var(--primary); 
+            padding: 10px 15px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            gap: 10px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        nav button { 
+            background: none; 
+            border: none; 
+            color: white; 
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            cursor: pointer; 
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        nav button:hover { background: rgba(255, 255, 255, 0.15); }
+        nav button.active { background: white; color: var(--primary-dark); }
+        .btn-logout { background: #b71c1c !important; color: white !important; margin-left: auto; }
+
+        header { 
+            background: white; 
+            padding: 20px; 
+            text-align: center; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        header h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
+        header p { margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        section { max-width: 1100px; margin: 20px auto; padding: 0 15px; animation: fadeIn 0.3s ease; }
+        .hidden { display: none !important; }
+        
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            padding: 22px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04); 
+            margin-bottom: 20px; 
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        @media(max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+        input, select, textarea { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0 16px 0; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        select[multiple] { height: 140px; }
+        
+        .btn-main { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            width: 100%; 
+            transition: background 0.2s ease;
+        }
+        .btn-main:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #616161; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.88rem; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        th { background: #f9f9f9; font-weight: 600; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge-pending { background: #fff3e0; color: var(--warning); }
+        .badge-process { background: #e1f5fe; color: var(--info); }
+        .badge-resolved { background: #e8f5e9; color: var(--primary-dark); }
+        .badge-rejected { background: #ffebee; color: var(--danger); }
+
+        .device-chip { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: var(--primary-light); 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            margin-bottom: 6px; 
+            border-left: 3px solid var(--primary); 
+        }
+        .btn-del { background: #ffcdd2; color: #b71c1c; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+        
+        .proyeccion-box { background: var(--primary-dark); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .alert { padding: 14px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center; font-size: 0.9rem; }
+        .instruccion { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; font-style: italic; }
+        .cost-preview { background: #f9f9f9; border: 1px dashed var(--primary); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: bold; color: var(--primary-dark); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<nav id="mainNav" class="hidden">
+    <button onclick="changeTab('appTab')" id="btn-appTab">Dashboard</button>
+    <button onclick="changeTab('pqrsTab')" id="btn-pqrsTab">PQRS</button>
+    <button onclick="changeTab('reservasTab')" id="btn-reservasTab">Reservas</button>
+    <button onclick="changeTab('carteleraTab')" id="btn-carteleraTab">Cartelera</button>
+    <button onclick="changeTab('historialTab')" id="btn-historialTab">Historial</button>
+    <button onclick="changeTab('perfilTab')" id="btn-perfilTab">Perfil</button>
+    <button onclick="changeTab('nosotrosTab')" id="btn-nosotrosTab">Nosotros</button>
+    <button onclick="logout()" class="btn-logout">Salir</button>
+</nav>
+
+<header>
+    <h1>EcoHogar</h1>
+    <p>Gestión Operativa Residencial & Monitoreo Energético | UNAD</p>
+</header>
+
+<!-- AUTENTICACIÓN -->
+<section id="authSection">
+    <div class="card" id="loginBox" style="max-width: 420px; margin: 30px auto;">
+        <h2 style="text-align:center; color: var(--primary-dark);">Ingreso al Sistema</h2>
+        <label>Correo Electrónico</label>
+        <input type="email" id="emailIn" placeholder="usuario@ejemplo.com">
+        <label>Contraseña</label>
+        <input type="password" id="passIn" placeholder="••••••••">
+        <button class="btn-main" onclick="handleLogin()">ENTRAR</button>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+        <p align="center" style="font-size:0.9rem;">¿No tienes cuenta? <a href="#" onclick="toggleAuth(true)" style="color:var(--primary); font-weight:bold;">Regístrate aquí</a></p>
+    </div>
+
+    <div class="card hidden" id="regBox" style="max-width: 420px; margin: 30px auto;">
+        <h2 style="text-align:center; color: var(--primary-dark);">Registro de Usuario</h2>
+        <label>Nombre Completo</label>
+        <input type="text" id="nameReg" placeholder="Ej. Carlos Peña">
+        <label>Correo Electrónico</label>
+        <input type="email" id="emailReg" placeholder="correo@ejemplo.com">
+        <label>Contraseña</label>
+        <input type="password" id="passReg" placeholder="••••••••">
+        <label>Rol en la Copropiedad</label>
+        <select id="rolReg">
+            <option value="Residente">Residente (Casa / Apto)</option>
+            <option value="Comerciante">Comerciante (Local)</option>
+            <option value="Administrador">Administrador</option>
+        </select>
+        <label>Identificador de Inmueble</label>
+        <input type="text" id="inmuebleReg" placeholder="Ej. Apto 302 / Casa 12 / Local 1">
+        <button class="btn-main" onclick="handleRegister()">CREAR CUENTA</button>
+        <p align="center" style="font-size:0.9rem; margin-top: 15px;"><a href="#" onclick="toggleAuth(false)" style="color:var(--text-muted);">Volver al inicio de sesión</a></p>
+    </div>
+</section>
+
+<!-- DASHBOARD (APP TAB) -->
+<section id="appTab" class="hidden">
+    <div id="statusMsg"></div>
+    
+    <div class="grid-2">
+        <!-- Registro de Lecturas de Medidor -->
+        <div class="card">
+            <h3>Nuevas Lecturas de Consumo</h3>
+            <p class="instruccion">Ingresa la cantidad consumida. El costo estimado se calculará automáticamente.</p>
+            
+            <label>Tipo de Recurso</label>
+            <select id="tipoRecurso" onchange="actualizarCalculoRecurso()">
+                <option value="Energia">Energía Electricidad (kWh) - $1.000 COP/kWh</option>
+                <option value="Agua">Agua Potable (m³) - $5.000 COP/m³</option>
+            </select>
+            
+            <label>Cantidad de Lectura</label>
+            <input type="number" id="valConsumo" placeholder="Ej. 150" oninput="actualizarCalculoRecurso()">
+            
+            <div class="cost-preview" id="costoEstimadoBox">
+                Costo Estimado: $0 COP
+            </div>
+
+            <button class="btn-main" onclick="addConsumo()">REGISTRAR LECTURA</button>
+        </div>
+
+        <!-- Dispositivos y Aparatos -->
+        <div class="card">
+            <h3>Mis Aparatos y Electrodomésticos</h3>
+            <p class="instruccion">Selecciona los equipos de tu hogar o local para recibir recomendaciones de ahorro.</p>
+            <select id="selAparato" multiple>
+                <option value="Nevera">Nevera / Congelador</option>
+                <option value="Aire">Aire Acondicionado</option>
+                <option value="Lavadora">Lavadora</option>
+                <option value="Iluminacion">Iluminación LED / Halógena</option>
+                <option value="Televisor">Televisor / Pantalla</option>
+                <option value="Microondas">Microondas</option>
+                <option value="Ducha">Ducha Eléctrica</option>
+                <option value="Computadora">Computadora / Servidor</option>
+                <option value="Secadora">Secadora Ropa</option>
+                <option value="Consola">Consola Videojuegos</option>
+            </select>
+            <button class="btn-main" onclick="addAparato()">AÑADIR SELECCIONADOS</button>
+            <div id="listaAparatos" style="margin-top:12px"></div>
+        </div>
+    </div>
+
+    <div id="proyeccionZona"></div>
+
+    <div class="card">
+        <h3>Histórico de Tendencia de Consumo</h3>
+        <canvas id="chartConsumo" height="90"></canvas>
+    </div>
+
+    <div id="recsIA"></div>
+
+    <div class="card" style="border-top: 4px solid var(--primary);">
+        <h2>Visión Institucional y Tecnológica</h2>
+        <p><strong>EcoHogar</strong> se proyecta como el ecosistema digital para la optimización del consumo energético residencial y la gestión operativa centralizada, integrando el análisis de datos con la educación ciudadana en el marco de la propiedad horizontal.</p>
+        <p>Aspiramos a demostrar cómo la arquitectura de sistemas (tres capas desacopladas) puede mitigar el impacto económico de las tarifas eléctricas y de agua, contribuyendo directamente a la reducción de la huella de carbono individual en alineación con el <strong>Objetivo de Desarrollo Sostenible 11 (ODS 11: Ciudades y Comunidades Sostenibles)</strong> de la Organización de las Naciones Unidas.</p>
+    </div>
+</section>
+
+<!-- MÓDULO PQRS -->
+<section id="pqrsTab" class="hidden">
+    <div class="card">
+        <h2>Gestión de PQRS (Peticiones, Quejas, Reclamos y Sugerencias)</h2>
+        <p class="instruccion">Sistema oficial con asignación de número de ticket e historial inalterable con sello de tiempo.</p>
+        
+        <div id="formPQRSBox">
+            <hr style="margin: 15px 0;">
+            <h3>Radicar Nueva Solicitud</h3>
+            <div class="grid-2">
+                <div>
+                    <label>Tipo de Solicitud</label>
+                    <select id="pqrsTipo">
+                        <option value="Peticion">Petición</option>
+                        <option value="Queja">Queja</option>
+                        <option value="Reclamo">Reclamo</option>
+                        <option value="Sugerencia">Sugerencia</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Título del Asunto</label>
+                    <input type="text" id="pqrsTitulo" placeholder="Resumen del requerimiento">
+                </div>
+            </div>
+            <label>Descripción Detallada</label>
+            <textarea id="pqrsDesc" rows="3" placeholder="Explique detalladamente la situación..."></textarea>
+            <button class="btn-main" onclick="addPQRS()">RADICAR SOLICITUD DE TICKET</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Tickets de PQRS Registrados</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código Ticket</th>
+                        <th>Fecha y Hora</th>
+                        <th>Usuario</th>
+                        <th>Tipo</th>
+                        <th>Asunto</th>
+                        <th>Estado</th>
+                        <th>Acción (Admin)</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPQRS"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- MÓDULO RESERVAS -->
+<section id="reservasTab" class="hidden">
+    <div class="card">
+        <h2>Reserva de Espacios Comunes</h2>
+        <p class="instruccion">Consulte y agende el uso de zonas comunes comunitarias con validación para evitar duplicidad o traslapes de horario.</p>
+        
+        <div class="grid-2">
+            <div>
+                <h3>Solicitar Reserva</h3>
+                <label>Espacio Común</label>
+                <select id="resEspacio">
+                    <option value="Salón Social">Salón Social</option>
+                    <option value="Cancha Sintética">Cancha Sintética</option>
+                    <option value="Zona BBQ">Zona BBQ / Asadores</option>
+                    <option value="Kiosco Comunitario">Kiosco Comunitario</option>
+                </select>
+                <label>Fecha</label>
+                <input type="date" id="resFecha">
+                <div class="grid-2">
+                    <div>
+                        <label>Hora Inicio</label>
+                        <input type="time" id="resHoraInicio">
+                    </div>
+                    <div>
+                        <label>Hora Fin</label>
+                        <input type="time" id="resHoraFin">
+                    </div>
+                </div>
+                <button class="btn-main" onclick="addReserva()">SOLICITAR RESERVA</button>
+            </div>
+            
+            <div>
+                <h3>Reservas Activas y Confirmadas</h3>
+                <div id="listaReservasAgenda" style="max-height: 320px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Panel de Control de Reservas</h3>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Espacio</th>
+                        <th>Solicitante</th>
+                        <th>Estado</th>
+                        <th>Acción (Admin)</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaReservas"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- CARTELERA INFORMATIVA -->
+<section id="carteleraTab" class="hidden">
+    <div class="card" id="adminNoticeForm">
+        <h3>Publicar Comunicado Oficial (Solo Administración)</h3>
+        <input type="text" id="noticeTitle" placeholder="Título del comunicado">
+        <textarea id="noticeBody" rows="3" placeholder="Contenido del mensaje institucional..."></textarea>
+        <button class="btn-main" onclick="addComunicado()">PUBLICAR COMUNICADO</button>
+    </div>
+    
+    <div class="card">
+        <h2>Cartelera Informativa Comunitaria</h2>
+        <div id="comunicadosFeed"></div>
+    </div>
+</section>
+
+<!-- HISTORIAL TAB -->
+<section id="historialTab" class="hidden">
+    <div class="card">
+        <h2>Historial General de Lecturas de Consumo</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha Lectura</th>
+                        <th>Recurso</th>
+                        <th>Lectura Registrada</th>
+                        <th>Costo Estimado (COP)</th>
+                        <th>Diferencia con Anterior</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCuerpo"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- PERFIL TAB -->
+<section id="perfilTab" class="hidden">
+    <div class="card">
+        <h2>Mi Perfil de Usuario</h2>
+        <p><strong>Nombre:</strong> <span id="pName"></span></p>
+        <p><strong>Correo Electrónico:</strong> <span id="pEmail"></span></p>
+        <p><strong>Rol Asignado:</strong> <span id="pRol"></span></p>
+        <p><strong>Identificador Inmueble:</strong> <span id="pInmueble"></span></p>
+        <hr style="margin: 20px 0;">
+        <h3>Actualizar Datos de Cuenta</h3>
+        <label>Nuevo Nombre</label>
+        <input type="text" id="updName" placeholder="Actualizar nombre">
+        <label>Nueva Contraseña</label>
+        <input type="password" id="updPass" placeholder="Nueva contraseña de acceso">
+        <button class="btn-main" onclick="updateUser()">GUARDAR CAMBIOS</button>
+    </div>
+</section>
+
+<!-- SOBRE NOSOTROS -->
+<section id="nosotrosTab" class="hidden">
+    <div class="card">
+        <h2>Sobre los Desarrolladores del Proyecto</h2>
+        <p>Somos el equipo de estudiantes e investigadores del programa de <strong>Ingeniería de Sistemas</strong> de la <strong>Universidad Nacional Abierta y a Distancia (UNAD)</strong>. El proyecto EcoHogar se enmarca en la línea de investigación institucional en Ingeniería de Software y el semillero JOKMAH (Grupo DAVINCI):</p>
+        <ul style="line-height: 1.8;">
+            <li><strong>Carlos Eduardo Peña Garcés:</strong> Liderazgo técnico, arquitectura de sistemas y diseño de lógica de negocio (Product Owner).</li>
+            <li><strong>Virginia Ríos Santiz:</strong> Desarrollo de software y programación modular de componentes (Development Team).</li>
+            <li><strong>María Camila Arias Quintanilla:</strong> Gestión de requerimientos e investigación de datos de consumo (Scrum Master).</li>
+        </ul>
+        <p><strong>Tutor de Proyecto de Grado:</strong> Orlando Gómez Barboza</p>
+    </div>
+</section>
+
+<script>
+// BASE DE DATOS DE CONSEJOS Y VIDEOS MULTIMEDIA (HISTORIAL REUTILIZABLE)
+const videoDB = {
+    "Nevera": { 
+        tips: ["Regula el termostato a 4°C para conservación óptima.", "Limpia la rejilla trasera del condensador dos veces al año.", "Verifica que las gomas de sellado magnético cierren herméticamente."], 
+        vids: ["RfqRNvoFNEc", "8vxw6lA0XiI", "JsdqIv_bwj4"] 
+    },
+    "Aire": { 
+        tips: ["Mantén el equipo en 24°C para equilibrio térmico.", "Limpia los filtros de aire cada quince días.", "Aísla térmicamente puertas y ventanas mientras esté activo."], 
+        vids: ["dBCTvgPfjiE", "lZEHVW7GETM", "ysO-nhLVNHg"] 
+    },
+    "Lavadora": { 
+        tips: ["Utiliza siempre la carga completa recomendada.", "Lava con agua fría para reducir hasta un 80% de energía por ciclo.", "Aprovecha el centrifugado al máximo para acortar el secado."], 
+        vids: ["c3XbtpCuJXI", "TAoObN7O6A4", "wOHXnsmufwI"] 
+    },
+    "Iluminacion": { 
+        tips: ["Sustituye bombillas incandescentes por tecnología LED.", "Limpia las luminarias para maximizar el flujo luminoso.", "Aprovecha al máximo la luz natural diurna."], 
+        vids: ["sWoBslcIaPc", "IcrlKyWAgXU", "4DOenDA8oY8"] 
+    },
+    "Televisor": { 
+        tips: ["Ajusta la luz de fondo a niveles moderados.", "Desconecta televisores de la toma para evitar el consumo vampiro (Standby).", "Activa el temporizador de apagado automático nocturno."], 
+        vids: ["K_DN6VRxNqQ", "GtuILiLaIWE", "QwqjxOOw13U"] 
+    },
+    "Microondas": { 
+        tips: ["Limpia frecuentemente la grasa de las paredes internas.", "Tapa los recipientes para concentrar el calor rápidamente.", "Desconecta el aparato si no se utiliza con frecuencia."], 
+        vids: ["zXpoYKClYco", "MBhkDJSsyjk", "X-xnCn9vIzY"] 
+    },
+    "Ducha": { 
+        tips: ["Limita las duchas a un tiempo máximo de 5 minutos.", "Instala regaderas o cabezales de bajo flujo.", "No mezcles agua fría y caliente en duchas eléctricas; regula la potencia."], 
+        vids: ["W3bQteIJGiE", "AhIUeAwPzqg", "6kBZlwRTSgA"] 
+    },
+    "Computadora": { 
+        tips: ["Configura los planes de energía en modo economizador.", "Reduce el nivel de brillo de la pantalla.", "Suspende o apaga la máquina durante períodos de inactividad."], 
+        vids: ["e86QttRDZPw", "6mH85Lncf3g", "23z2tvO-AAE"] 
+    },
+    "Secadora": { 
+        tips: ["Limpia el filtro de pelusa antes de cada carga.", "Aprovecha el secado solar en días despejados.", "Realiza cargas consecutivas para aprovechar el calor acumulado."], 
+        vids: ["XAIY8Z7Yh1U", "tmS7wzmBgPQ", "LyK3F7PLzAg"] 
+    },
+    "Consola": { 
+        tips: ["Desactiva el modo de encendido rápido (reposo de alto consumo).", "Desconecta mandos y periféricos al completar la carga.", "Mantenla libre de polvo para evitar sobrecalentamiento del ventilador."], 
+        vids: ["fftMZ9BfN3E", "7LScAEmfd4I", "fdEpl4pMERE"] 
+    }
+};
+
+// PERSISTENCIA DE DATOS CON LOCALSTORAGE (INICIALIZADO LIMPIO DE CONSUMOS)
+let users = JSON.parse(localStorage.getItem('ecoUsers_v2')) || [
+    {
+        name: "Administrador EcoHogar",
+        email: "admin@ecohogar.gov.co",
+        pass: "123456",
+        rol: "Administrador",
+        inmueble: "Administración Central",
+        consumos: [],
+        aparatos: []
+    },
+    {
+        name: "Carlos Peña (Residente)",
+        email: "residente@ecohogar.gov.co",
+        pass: "123456",
+        rol: "Residente",
+        inmueble: "Apto 401",
+        consumos: [],
+        aparatos: []
+    }
+];
+
+let pqrsList = JSON.parse(localStorage.getItem('ecoPQRS_v2')) || [];
+let reservasList = JSON.parse(localStorage.getItem('ecoReservas_v2')) || [];
+let comunicadosList = JSON.parse(localStorage.getItem('ecoComunicados_v2')) || [
+    {
+        id: 1,
+        titulo: "Bienvenidos a la Plataforma EcoHogar",
+        fecha: new Date().toLocaleDateString('es-CO'),
+        autor: "Administración Central",
+        contenido: "Iniciamos oficialmente el despliegue del sistema web centralizado para la trazabilidad de solicitudes de mantenimiento, reserva de áreas comunitarias y monitoreo del consumo eficiente de agua y energía."
+    }
+];
+
+let currentUser = null;
+let myChart = null;
+
+// AUTENTICACIÓN
+function handleRegister() {
+    const name = document.getElementById('nameReg').value;
+    const email = document.getElementById('emailReg').value;
+    const pass = document.getElementById('passReg').value;
+    const rol = document.getElementById('rolReg').value;
+    const inmueble = document.getElementById('inmuebleReg').value;
+
+    if(!name || !email || !pass || !inmueble) return alert("Por favor complete todos los campos requeridos.");
+    if(users.find(u => u.email === email)) return alert("El correo ya se encuentra registrado.");
+
+    users.push({
+        name, email, pass, rol, inmueble,
+        consumos: [],
+        aparatos: []
+    });
+    saveUsers();
+    alert("¡Registro exitoso! Ya puede ingresar con sus credenciales.");
+    toggleAuth(false);
+}
+
+function handleLogin() {
+    const email = document.getElementById('emailIn').value;
+    const pass = document.getElementById('passIn').value;
+
+    let user = users.find(u => u.email === email && u.pass === pass);
+    if(!user) return alert("Credenciales incorrectas o usuario no registrado.");
+
+    currentUser = user;
+    document.getElementById('authSection').classList.add('hidden');
+    document.getElementById('mainNav').classList.remove('hidden');
+    
+    // Ajustar visibilidad por rol
+    if(currentUser.rol === 'Administrador') {
+        document.getElementById('adminNoticeForm').classList.remove('hidden');
+    } else {
+        document.getElementById('adminNoticeForm').classList.add('hidden');
+    }
+
+    changeTab('appTab');
+    renderAll();
+}
+
+function logout() {
+    location.reload();
+}
+
+function toggleAuth(reg) {
+    document.getElementById('loginBox').classList.toggle('hidden', reg);
+    document.getElementById('regBox').classList.toggle('hidden', !reg);
+}
+
+// CÁLCULO DE COSTO EN TIEMPO REAL
+function actualizarCalculoRecurso() {
+    const tipo = document.getElementById('tipoRecurso').value;
+    const val = parseFloat(document.getElementById('valConsumo').value) || 0;
+    const tarifa = tipo === 'Energia' ? 1000 : 5000;
+    const costo = val * tarifa;
+    
+    document.getElementById('costoEstimadoBox').innerText = 
+        `Costo Estimado: $${costo.toLocaleString('es-CO')} COP (${val} ${tipo === 'Energia' ? 'kWh' : 'm³'} x $${tarifa.toLocaleString()} COP)`;
+}
+
+// RENDERIZADO GENERAL
+function renderAll() {
+    renderAparatos();
+    renderRecs();
+    renderChart();
+    renderStatusYProyeccion();
+    renderComunicados();
+    renderPQRS();
+    renderReservas();
+
+    document.getElementById('pName').innerText = currentUser.name;
+    document.getElementById('pEmail').innerText = currentUser.email;
+    document.getElementById('pRol').innerText = currentUser.rol;
+    document.getElementById('pInmueble').innerText = currentUser.inmueble;
+}
+
+// CONSUMOS Y PROYECCIÓN
+function addConsumo() {
+    const valInput = document.getElementById('valConsumo').value;
+    if(!valInput) return alert("Ingrese un valor de lectura válido.");
+
+    const tipo = document.getElementById('tipoRecurso').value;
+    const cantidad = parseFloat(valInput);
+    const tarifa = tipo === 'Energia' ? 1000 : 5000;
+    const costoCalculado = cantidad * tarifa;
+
+    const registro = {
+        fecha: new Date().toLocaleDateString('es-CO'),
+        tipo: tipo,
+        lectura: cantidad,
+        costoEstimado: costoCalculado
+    };
+
+    currentUser.consumos.push(registro);
+    saveUsers();
+    renderAll();
+    
+    document.getElementById('valConsumo').value = "";
+    actualizarCalculoRecurso();
+    alert("¡Lectura de consumo registrada exitosamente!");
+}
+
+function renderStatusYProyeccion() {
+    const status = document.getElementById('statusMsg');
+    const proj = document.getElementById('proyeccionZona');
+    status.innerHTML = ""; proj.innerHTML = "";
+
+    if(currentUser.consumos.length > 0) {
+        let ultimo = currentUser.consumos[currentUser.consumos.length - 1];
+        let ahorroPotencial = ultimo.costoEstimado * 0.18;
+        
+        proj.innerHTML = `
+            <div class="proyeccion-box">
+                <p style="margin:0; font-weight:600; font-size:0.85rem; letter-spacing:1px;">POTENCIAL ESTIMADO DE AHORRO MENSUAL EN EL HOGAR (18%)</p>
+                <h2 style="margin:8px 0 0 0; font-size:2rem;">$${ahorroPotencial.toLocaleString('es-CO')} COP</h2>
+            </div>`;
+
+        if(currentUser.consumos.length >= 2) {
+            let anterior = currentUser.consumos[currentUser.consumos.length - 2];
+            if(ultimo.costoEstimado > anterior.costoEstimado) {
+                let diff = ultimo.costoEstimado - anterior.costoEstimado;
+                status.innerHTML = `<div class="alert" style="background:#ffebee; color:#b71c1c"> Alerta de Incremento: El costo estimado subió en $${diff.toLocaleString('es-CO')} COP respecto al registro anterior.</div>`;
+            } else {
+                let diff = anterior.costoEstimado - ultimo.costoEstimado;
+                status.innerHTML = `<div class="alert" style="background:#e8f5e9; color:#2e7d32"> Progreso Positivo: Has logrado reducir el costo estimado en $${diff.toLocaleString('es-CO')} COP respecto a tu lectura anterior.</div>`;
+            }
+        }
+    }
+}
+
+function renderChart() {
+    const ctx = document.getElementById('chartConsumo').getContext('2d');
+    if(myChart) myChart.destroy();
+
+    const labels = currentUser.consumos.map((c, i) => `#${i+1} (${c.tipo} - ${c.fecha})`);
+    const dataCostos = currentUser.consumos.map(c => c.costoEstimado);
+
+    myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels.length > 0 ? labels : ["Sin registros"],
+            datasets: [{
+                label: 'Costo Estimado Calculado (COP)',
+                data: dataCostos.length > 0 ? dataCostos : [0],
+                backgroundColor: '#46be4b',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+// APARATOS Y RECOMENDACIONES MULTIMEDIA
+function addAparato() {
+    const select = document.getElementById('selAparato');
+    const selected = Array.from(select.selectedOptions).map(o => o.value);
+    
+    selected.forEach(a => {
+        if(!currentUser.aparatos.includes(a)) currentUser.aparatos.push(a);
+    });
+    
+    saveUsers();
+    renderAll();
+    select.selectedIndex = -1;
+}
+
+function removeAp(idx) {
+    currentUser.aparatos.splice(idx, 1);
+    saveUsers();
+    renderAll();
+}
+
+function renderAparatos() {
+    const lista = document.getElementById('listaAparatos');
+    lista.innerHTML = "";
+    currentUser.aparatos.forEach((ap, i) => {
+        lista.innerHTML += `<div class="device-chip"><span><strong>${ap}</strong></span><button class="btn-del" onclick="removeAp(${i})">X</button></div>`;
+    });
+}
+
+function renderRecs() {
+    const area = document.getElementById('recsIA');
+    area.innerHTML = "<h3>Guías y Recomendaciones de Eficiencia Energética</h3>";
+    
+    if(currentUser.aparatos.length === 0) {
+        area.innerHTML += "<p class='instruccion'>Añada sus aparatos electrodomésticos en la sección superior para desplegar sus guías de optimización.</p>";
+        return;
+    }
+
+    currentUser.aparatos.forEach(ap => {
+        const d = videoDB[ap];
+        if(!d) return;
+        let htmlTips = d.tips.map(t => `<li>${t}</li>`).join("");
+        let htmlVids = d.vids.map((vid, i) => `<a href="https://www.youtube.com/watch?v=${vid}" target="_blank" style="margin-right:15px; color:var(--primary-dark); font-weight:bold; font-size:0.85rem;">▶ Tutorial Audiovisual ${i+1}</a>`).join("");
+        area.innerHTML += `
+            <div class="card">
+                <h4 style="margin:0 0 10px 0; color:var(--primary-dark)">${ap}</h4>
+                <ul style="margin:0; padding-left:20px; font-size:0.9rem;">${htmlTips}</ul>
+                <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${htmlVids}</div>
+            </div>`;
+    });
+}
+
+// HISTORIAL COMPLETO
+function renderHistorial() {
+    const cuerpo = document.getElementById('tablaCuerpo');
+    cuerpo.innerHTML = "";
+    currentUser.consumos.forEach((c, i) => {
+        let diff = "Base";
+        let estado = "Registro Inicial";
+        if(i > 0) {
+            let prev = currentUser.consumos[i-1].costoEstimado;
+            let d = c.costoEstimado - prev;
+            diff = `$${d.toLocaleString('es-CO')} COP`;
+            estado = d > 0 ? "Subió 📈" : (d < 0 ? "Bajó 📉" : "Igual 🟢");
+        }
+
+        cuerpo.innerHTML += `
+            <tr>
+                <td>${c.fecha}</td>
+                <td><strong>${c.tipo}</strong></td>
+                <td>${c.lectura} ${c.tipo === 'Energia' ? 'kWh' : 'm³'}</td>
+                <td>$${c.costoEstimado.toLocaleString('es-CO')}</td>
+                <td>${diff}</td>
+                <td>${estado}</td>
+            </tr>`;
+    });
+}
+
+// MÓDULO PQRS (HU02)
+function addPQRS() {
+    const tipo = document.getElementById('pqrsTipo').value;
+    const titulo = document.getElementById('pqrsTitulo').value;
+    const desc = document.getElementById('pqrsDesc').value;
+
+    if(!titulo || !desc) return alert("Por favor complete el título y la descripción del ticket.");
+
+    const ticket = {
+        codigo: "TK-" + Math.floor(100000 + Math.random() * 900000),
+        fecha: new Date().toLocaleString('es-CO'),
+        usuario: currentUser.name + " (" + currentUser.inmueble + ")",
+        tipo, titulo, desc,
+        estado: "Registrado"
+    };
+
+    pqrsList.push(ticket);
+    localStorage.setItem('ecoPQRS_v2', JSON.stringify(pqrsList));
+    
+    document.getElementById('pqrsTitulo').value = "";
+    document.getElementById('pqrsDesc').value = "";
+    renderPQRS();
+    alert(`Ticket ${ticket.codigo} radicado correctamente.`);
+}
+
+function cambiarEstadoPQRS(idx, nuevoEstado) {
+    pqrsList[idx].estado = nuevoEstado;
+    localStorage.setItem('ecoPQRS_v2', JSON.stringify(pqrsList));
+    renderPQRS();
+}
+
+function renderPQRS() {
+    const tabla = document.getElementById('tablaPQRS');
+    tabla.innerHTML = "";
+
+    pqrsList.forEach((item, i) => {
+        let badgeClass = "badge-pending";
+        if(item.estado === 'En Proceso') badgeClass = "badge-process";
+        if(item.estado === 'Resuelto') badgeClass = "badge-resolved";
+
+        let adminAction = "N/A";
+        if(currentUser.rol === 'Administrador') {
+            adminAction = `
+                <select onchange="cambiarEstadoPQRS(${i}, this.value)" style="margin:0; padding:4px;">
+                    <option value="Registrado" ${item.estado === 'Registrado' ? 'selected' : ''}>Registrado</option>
+                    <option value="En Proceso" ${item.estado === 'En Proceso' ? 'selected' : ''}>En Proceso</option>
+                    <option value="Resuelto" ${item.estado === 'Resuelto' ? 'selected' : ''}>Resuelto</option>
+                </select>`;
+        }
+
+        tabla.innerHTML += `
+            <tr>
+                <td><strong>${item.codigo}</strong></td>
+                <td>${item.fecha}</td>
+                <td>${item.usuario}</td>
+                <td>${item.tipo}</td>
+                <td><strong>${item.titulo}</strong><br><small color="#666">${item.desc}</small></td>
+                <td><span class="badge ${badgeClass}">${item.estado}</span></td>
+                <td>${adminAction}</td>
+            </tr>`;
+    });
+}
+
+// MÓDULO RESERVAS (HU03)
+function addReserva() {
+    const espacio = document.getElementById('resEspacio').value;
+    const fecha = document.getElementById('resFecha').value;
+    const horaInicio = document.getElementById('resHoraInicio').value;
+    const horaFin = document.getElementById('resHoraFin').value;
+
+    if(!fecha || !horaInicio || !horaFin) return alert("Por favor defina la fecha y el horario completo.");
+
+    // Validación de traslapes de horario
+    const conflicto = reservasList.find(r => 
+        r.espacio === espacio && 
+        r.fecha === fecha && 
+        r.estado !== 'Rechazada' &&
+        ((horaInicio >= r.horaInicio && horaInicio < r.horaFin) || (horaFin > r.horaInicio && horaFin <= r.horaFin))
+    );
+
+    if(conflicto) return alert(" Conflicto de Horario: El espacio ya cuenta con una reserva agendada en ese rango horaria.");
+
+    const reserva = {
+        id: Date.now(),
+        espacio, fecha, horaInicio, horaFin,
+        solicitante: currentUser.name + " (" + currentUser.inmueble + ")",
+        estado: "Pendiente"
+    };
+
+    reservasList.push(reserva);
+    localStorage.setItem('ecoReservas_v2', JSON.stringify(reservasList));
+    renderReservas();
+    alert("Solicitud de reserva enviada correctamente.");
+}
+
+function cambiarEstadoReserva(idx, nuevoEstado) {
+    reservasList[idx].estado = nuevoEstado;
+    localStorage.setItem('ecoReservas_v2', JSON.stringify(reservasList));
+    renderReservas();
+}
+
+function renderReservas() {
+    const tabla = document.getElementById('tablaReservas');
+    const agenda = document.getElementById('listaReservasAgenda');
+    tabla.innerHTML = ""; agenda.innerHTML = "";
+
+    reservasList.forEach((res, i) => {
+        let badgeClass = "badge-pending";
+        if(res.estado === 'Aprobada') badgeClass = "badge-resolved";
+        if(res.estado === 'Rechazada') badgeClass = "badge-rejected";
+
+        let adminAction = "N/A";
+        if(currentUser.rol === 'Administrador') {
+            adminAction = `
+                <button class="btn-main" style="padding:4px 8px; font-size:0.75rem;" onclick="cambiarEstadoReserva(${i}, 'Aprobada')">✓</button>
+                <button class="btn-del" onclick="cambiarEstadoReserva(${i}, 'Rechazada')">X</button>`;
+        }
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${res.fecha}</td>
+                <td>${res.horaInicio} - ${res.horaFin}</td>
+                <td><strong>${res.espacio}</strong></td>
+                <td>${res.solicitante}</td>
+                <td><span class="badge ${badgeClass}">${res.estado}</span></td>
+                <td>${adminAction}</td>
+            </tr>`;
+
+        if(res.estado === 'Aprobada') {
+            agenda.innerHTML += `
+                <div style="background:#e8f5e9; border-left:4px solid var(--primary); padding:10px; margin-bottom:8px; border-radius:4px;">
+                    <strong>${res.espacio}</strong> - ${res.fecha}<br>
+                    <small>Horario: ${res.horaInicio} a ${res.horaFin} | Reservado por: ${res.solicitante}</small>
+                </div>`;
+        }
+    });
+}
+
+// CARTELERA DE COMUNICADOS
+function addComunicado() {
+    const titulo = document.getElementById('noticeTitle').value;
+    const contenido = document.getElementById('noticeBody').value;
+
+    if(!titulo || !contenido) return alert("Por favor complete los campos del comunicado.");
+
+    comunicadosList.unshift({
+        id: Date.now(),
+        titulo, contenido,
+        fecha: new Date().toLocaleDateString('es-CO'),
+        autor: currentUser.name
+    });
+
+    localStorage.setItem('ecoComunicados_v2', JSON.stringify(comunicadosList));
+    document.getElementById('noticeTitle').value = "";
+    document.getElementById('noticeBody').value = "";
+    renderComunicados();
+    alert("Comunicado publicado en la cartelera.");
+}
+
+function renderComunicados() {
+    const feed = document.getElementById('comunicadosFeed');
+    feed.innerHTML = "";
+    comunicadosList.forEach(c => {
+        feed.innerHTML += `
+            <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+                <h3 style="margin: 0 0 5px 0; color: var(--primary-dark);">${c.titulo}</h3>
+                <small style="color: #888;">Publicado el ${c.fecha} por ${c.autor}</small>
+                <p style="margin-top: 8px; font-size: 0.95rem;">${c.contenido}</p>
+            </div>`;
+    });
+}
+
+// GESTIÓN DE PERFIL
+function updateUser() {
+    const newName = document.getElementById('updName').value;
+    const newPass = document.getElementById('updPass').value;
+
+    if(newName) currentUser.name = newName;
+    if(newPass) currentUser.pass = newPass;
+
+    saveUsers();
+    renderAll();
+    alert("Datos de perfil actualizados exitosamente.");
+}
+
+function saveUsers() {
+    let idx = users.findIndex(u => u.email === currentUser.email);
+    if(idx !== -1) users[idx] = currentUser;
+    localStorage.setItem('ecoUsers_v2', JSON.stringify(users));
+}
+
+// CAMBIO DE PESTAÑAS (ROUTING EN CLIENTE)
+function changeTab(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById('btn-' + id).classList.add('active');
+
+    if(id === 'historialTab') renderHistorial();
+}
+</script>
+</body>
+</html>
